@@ -1,26 +1,24 @@
 ---
-title: This is my first post.
-description: This is a post on My Blog about agile frameworks.
-date: 2018-05-01
+title: First Post.
+description: Yup. A first post post.
+date: 2019-12-05
 tags:
-  - another-tag
+  - meta
 layout: layouts/post.njk
 ---
-Leverage agile frameworks to provide a robust synopsis for high level overviews. Iterative approaches to corporate strategy foster collaborative thinking to further the overall value proposition. Organically grow the holistic world view of disruptive innovation via workplace diversity and empowerment.
 
-Bring to the table win-win survival strategies to ensure proactive domination. At the end of the day, going forward, a new normal that has evolved from generation X is on the runway heading towards a streamlined cloud solution. User generated content in real-time will have multiple touchpoints for offshoring.
+There we go again. It's the 5th of December, 00:19 in the clock. End of 2019. Almost 2020. That's *twenty years* after Y2K. I mean, to be honest, what could be a better time to...
 
-## Section Header
 
-Capitalize on low hanging fruit to identify a ballpark value added activity to beta test. Override the digital divide with additional clickthroughs from DevOps. Nanotechnology immersion along the information highway will close the loop on focusing solely on the bottom line.
+...start a blog??
 
-``` text/2-3
-// this is a command
-function myCommand() {
-	let counter = 0;
-	counter++;
-}
+So here's the general rules about this blog:
 
-// Test with a line break above this line.
-console.log('Test');
-```
+- I won't keep a schedule
+- It won't be read by anyone
+- Because I'll most likely never write anything
+
+
+So, what's the point? Having a place where to dump by brain farts in an orderly manner. That's it. And yeah a place where I can point people to if my brain farts are worthy.
+
+That's all I have to say. Another "first post" post. I've made so many of those that I've lost count. Let's see what happens.

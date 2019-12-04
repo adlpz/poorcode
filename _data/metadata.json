@@ -1,16 +1,16 @@
 {
-  "title": "Your Blog Name",
-  "url": "https://myurl.com/",
-  "description": "I am writing about my experiences as a naval navel-gazer.",
+  "title": "Poorcode - A blog (sometimes) about code",
+  "url": "https://poorcode.com/",
+  "description": "Rambling writings of a guy in tech.",
   "feed": {
-    "subtitle": "I am writing about my experiences as a naval navel-gazer.",
+    "subtitle": "Rambling writings of a guy in tech.",
     "filename": "feed.xml",
     "path": "/feed/feed.xml",
-    "url": "https://myurl.com/feed/feed.xml",
-    "id": "https://myurl.com/"
+    "url": "https://poorcode.com/feed/feed.xml",
+    "id": "https://poorcode.com/"
   },
   "author": {
-    "name": "Your Name Here",
-    "email": "youremailaddress@example.com"
+    "name": "Adrià López",
+    "email": "adria@ydevs.com"
   }
 }

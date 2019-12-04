@@ -1,0 +1,16 @@
+---
+layout: layouts/home.njk
+permalink: /old-stuff/
+eleventyNavigation:
+  key: Old Stuff
+  order: 4
+---
+
+<h1>Old Stuff</h1>
+<p>Here's a collection of old posts I've salvaged from the dozens of different failed blogs
+I've started during the years</p>
+
+<p>You shouldn't expect much from these. They are mainly here for nostalgia and easy linking</p>
+
+    {% set postslist = collections["old-stuff"] %}
+{% include "postslist.njk" %}

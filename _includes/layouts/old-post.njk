@@ -1,0 +1,23 @@
+---
+layout: layouts/base.njk
+templateClass: tmpl-post
+---
+<div class="warning">
+    <h2>This is a very old post</h2>
+    <p>This was originally published on {{ date | readableDate }}</p>
+    <p>I'm keeping these here mainly for nostalgic reasons. This post was writen years ago and
+    it's very likely you'll find it:</p>
+    <ol>
+    <li>Annoying (sorry, I was young)</li>
+    <li>Incorrect (sorry, I didn't know better)</li>
+    <li>Outdated (again, this is <em>old</em>)</li>
+    <li>All of the above</li>
+    </ol>
+    <p>So, basically, proceed at your own risk.</p>
+</div>
+
+<h1>{{ title }}</h1>
+
+{{ content | safe }}
+
+<p><a href="{{ '/' | url }}">← Home</a></p>
