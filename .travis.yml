@@ -3,12 +3,13 @@ node_js:
   - 8
 before_script:
   - npm install @11ty/eleventy -g
-script: eleventy
+script: eleventy --pathprefix="/"
 deploy:
   local-dir: _site
   provider: pages
   skip-cleanup: true
   github-token: $GITHUB_TOKEN  # Set in travis-ci.org dashboard, marked secure
   keep-history: true
+  fqdn: poorcode.com
   on:
     branch: master
